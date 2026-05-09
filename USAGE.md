@@ -175,7 +175,7 @@ results = engine.search(
 ## 🌐 REST API
 
 ```bash
-litesearch serve --db my.db --port 8900
+litesearch serve notes --port 8900
 ```
 
 ### Endpoints
@@ -215,8 +215,7 @@ GET /health
 ### Server options
 
 ```bash
-litesearch serve \
-  --db my.db \
+litesearch serve notes \
   --host 0.0.0.0 \
   --port 8900 \
   --model embeddinggemma \
@@ -228,20 +227,36 @@ litesearch serve \
 
 ## 💻 CLI
 
+All commands use **named indexes** stored at `~/.litesearch/<name>.db`. You can also pass a direct path (e.g. `./my.db`) instead of a name.
+
 ```bash
-# Index a directory (all files by default)
-litesearch index /path/to/notes --db my.db
-litesearch index /path/to/notes --db my.db --glob "*.md"    # markdown only
-litesearch index /path/to/logs --db my.db --glob "*.txt"    # plain text
+# Index a directory — creates the index automatically
+litesearch index notes /path/to/notes                      # all files
+litesearch index notes /path/to/notes --glob "*.md"        # markdown only
+litesearch index logs /var/log/myapp --glob "*.txt"        # plain text
 
 # Index a JSONL file
-litesearch index-jsonl conversations.jsonl --db my.db --text-field text --title-field title
+litesearch index-jsonl chats conversations.jsonl --text-field text --title-field title
 
-# Search
-litesearch query "kubernetes deployment" --db my.db --mode hybrid --top-k 5
+# Search (default: mode=semantic, reranker=none)
+litesearch search notes "kubernetes deployment"
+litesearch search notes "kubernetes deployment" --mode hybrid
+litesearch search notes "kubernetes deployment" --reranker mmr --top-k 5
 
-# Start server
-litesearch serve --db my.db
+# List all indexes
+litesearch list
+
+# Inspect an index
+litesearch info notes
+
+# Clear all data (keeps the file)
+litesearch clear notes
+
+# Delete an index entirely
+litesearch delete notes
+
+# Serve an index as a REST API
+litesearch serve notes --port 8900
 ```
 
 ---
@@ -326,10 +341,10 @@ litesearch runs as a persistent HTTP service. Start it once, query it from any t
 
 ```bash
 # Start in background
-litesearch serve --db my.db --port 8900 &
+litesearch serve notes --port 8900 &
 
 # Or with nohup for persistence
-nohup litesearch serve --db my.db --port 8900 > litesearch.log 2>&1 &
+nohup litesearch serve notes --port 8900 > litesearch.log 2>&1 &
 
 # Or with systemd (Linux)
 # Create /etc/systemd/system/litesearch.service, then:

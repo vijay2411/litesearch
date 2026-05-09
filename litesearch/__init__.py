@@ -131,7 +131,7 @@ class LiteSearch:
         self,
         query: str,
         *,
-        mode: Mode = "hybrid",
+        mode: Mode = "semantic",
         reranker: Reranker = "none",
         top_k: Optional[int] = None,
         pool_size: Optional[int] = None,

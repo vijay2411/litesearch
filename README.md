@@ -150,6 +150,48 @@ cd search-md-files
 source .venv/bin/activate
 ```
 
+### 💻 CLI — named indexes
+
+Every index has a name. litesearch stores them at `~/.litesearch/<name>.db`.
+
+```bash
+# Index a directory — creates the "notes" index automatically
+litesearch index notes ~/obsidian-vault --glob "*.md"
+
+# Index plain text files into a different index
+litesearch index logs /var/log/myapp --glob "*.txt"
+
+# Index a JSONL file
+litesearch index-jsonl chats conversations.jsonl --text-field text --title-field title
+
+# Search
+litesearch search notes "deployment pipeline"
+litesearch search notes "deployment pipeline" --mode hybrid
+litesearch search notes "deployment pipeline" --reranker mmr
+
+# List all indexes
+litesearch list
+#   notes           142 docs     1,204 chunks     12.3 MB
+#   logs             38 docs       190 chunks      2.1 MB
+#   chats           500 docs     2,100 chunks     18.7 MB
+
+# Inspect an index
+litesearch info notes
+
+# Clear all data (keeps the file)
+litesearch clear notes
+
+# Delete the index entirely
+litesearch delete notes
+
+# Serve an index as a REST API
+litesearch serve notes --port 8900
+```
+
+You can also pass a direct path instead of a name: `litesearch search ./my.db "query"`.
+
+### 🐍 Python library
+
 ```python
 from litesearch import LiteSearch, OllamaEmbedder
 
@@ -162,11 +204,11 @@ engine = LiteSearch("my.db", embedder=embedder)
 engine.add("notes/ideas.md", "# Ideas\nBuild a search engine that just works.")
 engine.add("notes/todo.md", "# TODO\n- Ship litesearch\n- Write docs")
 
-# Search (no reranker — fast, good enough for most cases)
-results = engine.search("search engine", mode="hybrid", top_k=5)
+# Search (default: mode="semantic", reranker="none")
+results = engine.search("search engine", top_k=5)
 
 # Search with reranker — better quality, slower
-results = engine.search("search engine", mode="hybrid", reranker="mmr", top_k=5)
+results = engine.search("search engine", reranker="mmr", top_k=5)
 
 for r in results:
     print(f"[{r.score:.3f}] {r.doc_path}: {r.snippet[:80]}")
@@ -178,12 +220,12 @@ engine.close()
 
 ## 🏆 Rerankers
 
-Rerankers are an optional second pass that re-scores your top results for better quality. They sit on top of any search mode.
+Optional second pass that re-scores your top results for better quality. Sits on top of any search mode.
 
 | Reranker | What it does | Setup needed |
 |---|---|---|
 | `none` | No reranking — raw search scores only | Nothing (default) |
-| `mmr` | Maximal marginal relevance — picks diverse results, reduces redundancy | Nothing — runs locally using existing embeddings |
+| `mmr` | Picks diverse results, reduces redundancy | Nothing — uses existing embeddings |
 | `cross_encoder` | ML model scores each (query, result) pair | External CLI binary (e.g. `rerank` with BAAI/bge-reranker-v2-m3) |
 | `llm` | LLM reads results and rates relevance | Gemini API key **or** local Ollama model |
 | `auto` | Runs all three, fuses via rank fusion | All of the above |
@@ -193,12 +235,10 @@ Rerankers are an optional second pass that re-scores your top results for better
 **Option A: Gemini (cloud, fast ~1-2s, recommended)**
 
 ```bash
-# Set env var — litesearch picks it up automatically
 export GEMINI_API_KEY="your-gemini-api-key"
 ```
 
 ```python
-# Or pass directly
 from litesearch import LiteSearch, LiteSearchConfig
 from litesearch.config import RerankerConfig
 
@@ -217,7 +257,6 @@ results = engine.search("query", reranker="llm")
 **Option B: Ollama (100% local, private, slower)**
 
 ```bash
-# Pull a model that can judge relevance
 ollama pull gemma3
 ```
 
@@ -233,9 +272,9 @@ engine = LiteSearch(config=config)
 results = engine.search("query", reranker="llm")
 ```
 
-> ⚠️ **Rerankers are optional.** `mode="hybrid"` with `reranker="none"` (the default) is already very good. Only add a reranker if you need higher precision on ambiguous queries or want diversity in results (`mmr`).
+> ⚠️ **Rerankers are optional.** Semantic search with `reranker="none"` (the default) is already very good. Only add a reranker if you need higher precision or diversity (`mmr`).
 
-> 📖 **Full usage guide** — all search modes, time decay, REST API, CLI, custom embedders, and configuration — see **[USAGE.md](USAGE.md)**.
+> 📖 **Full usage guide** — all search modes, time decay, REST API, custom embedders, full config reference — see **[USAGE.md](USAGE.md)**.
 
 ---
 
