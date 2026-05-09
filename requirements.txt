@@ -1,0 +1,32 @@
+# ── Core (required) ──────────────────────────────────────────────────
+# SQLite vector-search extension — adds FLOAT[] columns and KNN queries
+# to standard SQLite via a virtual table. Powers all semantic search.
+sqlite-vec>=0.1.1
+
+# Markdown frontmatter parser — extracts YAML metadata block from .md
+# files so we can separate the title/tags from the body before chunking.
+python-frontmatter>=1.0
+
+# Data validation & serialization — used for LLM response parsing in the
+# reranker and for the REST API response models.
+pydantic>=2.0
+
+# ── Embedding backend: Ollama (optional) ─────────────────────────────
+# Local LLM inference client — connects to a running Ollama server to
+# generate embeddings (e.g. embeddinggemma, nomic-embed-text).
+# Only needed if you use OllamaEmbedder (the default embedder).
+ollama>=0.3
+
+# ── REST API server (optional) ───────────────────────────────────────
+# ASGI web framework — powers the /search, /index, /health endpoints
+# when running litesearch as a standalone HTTP service.
+fastapi>=0.110
+
+# Production ASGI server — runs the FastAPI app. The [standard] extra
+# includes uvloop + httptools for better performance on Linux/macOS.
+uvicorn[standard]>=0.29
+
+# ── LLM reranker: Gemini (optional) ─────────────────────────────────
+# Google Generative AI SDK — used by the LLM listwise reranker when
+# backend="gemini". Calls Gemini 2.5 Flash for fast cloud reranking.
+google-genai>=1.0

@@ -1,0 +1,4 @@
+# Minimal dependencies — just the search library, no server or LLM reranking.
+sqlite-vec>=0.1.1
+python-frontmatter>=1.0
+pydantic>=2.0
