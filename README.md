@@ -288,27 +288,6 @@ results = engine.search("query", reranker="llm")
 
 ---
 
-## 🤖 Example: semantic search over Claude Code conversations
-
-litesearch can power a `/search-conversations` skill that finds past Claude Code sessions by meaning, not just keywords. "deployment pipeline" finds conversations about "CI/CD setup".
-
-```bash
-# 1. Index all conversations (run on a cron every 5 min)
-python conversation-indexer.py
-
-# 2. Search from the CLI
-litesearch search conversations "how did we set up auth?"
-
-# 3. Or from a skill script
-litesearch search conversations "database migration" --mode hybrid --top-k 5
-```
-
-Results include session UUIDs so you can `/resume` directly into the matched conversation.
-
-> 📖 Full setup guide — indexer script, skill integration, cron scheduling — see **[CONVERSATION-INDEXER.md](CONVERSATION-INDEXER.md)**.
-
----
-
 ## 🏗️ Project structure
 
 ```
