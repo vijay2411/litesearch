@@ -153,20 +153,89 @@ source .venv/bin/activate
 ```python
 from litesearch import LiteSearch, OllamaEmbedder
 
+# Ollama must be running: ollama serve
+# Pull the embedding model first: ollama pull embeddinggemma
 embedder = OllamaEmbedder(model="embeddinggemma", dims=768)
 engine = LiteSearch("my.db", embedder=embedder)
 
+# Index
 engine.add("notes/ideas.md", "# Ideas\nBuild a search engine that just works.")
 engine.add("notes/todo.md", "# TODO\n- Ship litesearch\n- Write docs")
 
+# Search (no reranker — fast, good enough for most cases)
 results = engine.search("search engine", mode="hybrid", top_k=5)
+
+# Search with reranker — better quality, slower
+results = engine.search("search engine", mode="hybrid", reranker="mmr", top_k=5)
+
 for r in results:
     print(f"[{r.score:.3f}] {r.doc_path}: {r.snippet[:80]}")
 
 engine.close()
 ```
 
-> 📖 **Full usage guide** — search modes, rerankers, time decay, REST API, CLI, custom embedders, configuration, and service integration — see **[USAGE.md](USAGE.md)**.
+---
+
+## 🏆 Rerankers
+
+Rerankers are an optional second pass that re-scores your top results for better quality. They sit on top of any search mode.
+
+| Reranker | What it does | Setup needed |
+|---|---|---|
+| `none` | No reranking — raw search scores only | Nothing (default) |
+| `mmr` | Maximal marginal relevance — picks diverse results, reduces redundancy | Nothing — runs locally using existing embeddings |
+| `cross_encoder` | ML model scores each (query, result) pair | External CLI binary (e.g. `rerank` with BAAI/bge-reranker-v2-m3) |
+| `llm` | LLM reads results and rates relevance | Gemini API key **or** local Ollama model |
+| `auto` | Runs all three, fuses via rank fusion | All of the above |
+
+### 🔑 Setting up LLM reranker
+
+**Option A: Gemini (cloud, fast ~1-2s, recommended)**
+
+```bash
+# Set env var — litesearch picks it up automatically
+export GEMINI_API_KEY="your-gemini-api-key"
+```
+
+```python
+# Or pass directly
+from litesearch import LiteSearch, LiteSearchConfig
+from litesearch.config import RerankerConfig
+
+config = LiteSearchConfig(
+    db_path="my.db",
+    reranker=RerankerConfig(
+        llm_judge_backend="gemini",
+        gemini_api_key="your-key",
+        # or: gemini_api_key_file="~/.secrets/gemini_key"
+    ),
+)
+engine = LiteSearch(config=config)
+results = engine.search("query", reranker="llm")
+```
+
+**Option B: Ollama (100% local, private, slower)**
+
+```bash
+# Pull a model that can judge relevance
+ollama pull gemma3
+```
+
+```python
+config = LiteSearchConfig(
+    db_path="my.db",
+    reranker=RerankerConfig(
+        llm_judge_backend="ollama",
+        llm_judge_model="gemma3",
+    ),
+)
+engine = LiteSearch(config=config)
+results = engine.search("query", reranker="llm")
+```
+
+> ⚠️ **Rerankers are optional.** `mode="hybrid"` with `reranker="none"` (the default) is already very good. Only add a reranker if you need higher precision on ambiguous queries or want diversity in results (`mmr`).
+
+> 📖 **Full usage guide** — all search modes, time decay, REST API, CLI, custom embedders, and configuration — see **[USAGE.md](USAGE.md)**.
 
 ---
 
