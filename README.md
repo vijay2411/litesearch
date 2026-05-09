@@ -8,7 +8,7 @@ Index any text. Search it four ways. Rerank with AI. No Elasticsearch, no Pineco
 
 ## 🎯 What this is
 
-A **local-first, file-based search engine** that combines full-text search (BM25) and vector similarity (embeddings) into one SQLite database. You feed it text — markdown, plain text, JSONL, whatever — and it gives you ranked, relevant results.
+A **100% local, 100% OFFLINE, file-based search engine** that combines full-text search (BM25) and vector similarity (embeddings) into one SQLite database. You feed it text — markdown, plain text, JSONL, whatever — and it gives you ranked, relevant results.
 
 - 📦 **One file** — your entire search index is a single `.db` file. Copy it, back it up, version it.
 - 🔀 **Four search modes** — keyword (BM25), meaning (semantic), both together (hybrid), or raw pattern matching (grep).
