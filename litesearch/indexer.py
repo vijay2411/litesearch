@@ -10,7 +10,7 @@ from typing import List, Optional
 
 from .chunker import Chunk, chunk_body
 from .embedder import Embedder, to_blob
-from .parser import parse_markdown
+from .parser import parse_file, parse_jsonl
 
 log = logging.getLogger("litesearch.indexer")
 
@@ -138,7 +138,7 @@ def _index_file_locked(
     if row is not None and row["content_hash"] == content_hash:
         return False
 
-    parsed = parse_markdown(path)
+    parsed = parse_file(path)
     mtime = int(path.stat().st_mtime)
     now = int(time.time())
 
@@ -212,6 +212,26 @@ def index_text(
         )
         conn.commit()
         return doc_id
+
+
+def index_jsonl(
+    conn: sqlite3.Connection,
+    path: Path,
+    embedder: Embedder,
+    text_field: str = "text",
+    title_field: str = "title",
+    soft_max_chars: int = 1500,
+) -> int:
+    """Index every line of a JSONL file as a separate document. Returns count indexed."""
+    count = 0
+    for doc in parse_jsonl(path, text_field=text_field, title_field=title_field):
+        doc_path = f"{path.stem}:{doc.title}"
+        index_text(
+            conn, doc_path, doc.body, embedder,
+            title=doc.title, soft_max_chars=soft_max_chars,
+        )
+        count += 1
+    return count
 
 
 def remove_doc(conn: sqlite3.Connection, path: str) -> bool:

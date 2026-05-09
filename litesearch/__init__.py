@@ -25,7 +25,7 @@ from typing import List, Literal, Optional
 from .config import LiteSearchConfig
 from .db import connect, init_db
 from .embedder import Embedder, OllamaEmbedder, from_blob, normalize, to_blob
-from .indexer import bootstrap_directory, index_file, index_text, remove_doc
+from .indexer import bootstrap_directory, index_file, index_jsonl, index_text, remove_doc
 from .rerank.auto import rerank_auto
 from .rerank.cross_encoder import rerank_cross_encoder
 from .rerank.llm_judge import rerank_llm
@@ -100,8 +100,22 @@ class LiteSearch:
             vault=v, soft_max_chars=self.config.chunking.soft_max_chars,
         )
 
+    def add_jsonl(
+        self,
+        file_path: str | Path,
+        *,
+        text_field: str = "text",
+        title_field: str = "title",
+    ) -> int:
+        """Index every line of a JSONL file as a separate document. Returns count indexed."""
+        return index_jsonl(
+            self._conn, Path(file_path), self._embedder,
+            text_field=text_field, title_field=title_field,
+            soft_max_chars=self.config.chunking.soft_max_chars,
+        )
+
     def add_directory(
-        self, directory: str | Path, *, glob: str = "*.md"
+        self, directory: str | Path, *, glob: str = "*.*"
     ) -> int:
         """Index all matching files in a directory. Returns count of files indexed."""
         return bootstrap_directory(

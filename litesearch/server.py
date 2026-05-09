@@ -57,6 +57,15 @@ class IndexResponse(BaseModel):
     path: str
 
 
+class BatchIndexRequest(BaseModel):
+    documents: List[IndexRequest]
+
+
+class BatchIndexResponse(BaseModel):
+    indexed: int
+    doc_ids: List[IndexResponse]
+
+
 class DeleteResponse(BaseModel):
     deleted: bool
     path: str
@@ -132,6 +141,14 @@ def create_app(engine: LiteSearch) -> FastAPI:
     def index_doc(body: IndexRequest):
         doc_id = engine.add(body.path, body.content, title=body.title)
         return IndexResponse(doc_id=doc_id, path=body.path)
+
+    @app.post("/index/batch", response_model=BatchIndexResponse)
+    def index_batch(body: BatchIndexRequest):
+        results = []
+        for doc in body.documents:
+            doc_id = engine.add(doc.path, doc.content, title=doc.title)
+            results.append(IndexResponse(doc_id=doc_id, path=doc.path))
+        return BatchIndexResponse(indexed=len(results), doc_ids=results)
 
     @app.delete("/doc/{path:path}", response_model=DeleteResponse)
     def delete_doc(path: str):
